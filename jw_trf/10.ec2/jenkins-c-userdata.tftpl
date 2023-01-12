@@ -1,0 +1,10 @@
+#!/bin/bash
+sudo yum upgrade -y
+sudo yum install -y java-11-amazon-corretto.x86_64
+sudo yum install -y git
+sudo amazon-linux-extras install -y docker
+sudo service docker start
+sudo systemctl enable docker
+sudo usermod -a -G docker ec2-user
+sudo chmod 666 /var/run/docker.sock
+curl -s -L https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker -o /etc/bash_completion.d/docker

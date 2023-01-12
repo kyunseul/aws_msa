@@ -1,0 +1,146 @@
+pipeline {
+  agent any
+  environment {
+    TEST  = '2'
+    CredentialID = 'front-end-Credentials'
+    ECR_ID = '009543462659'
+    IMG_NAME = 'payment'
+    CurrentBuildnumber = '2.03'
+    SockShop_NAME = 'weaveworksdemos'
+    ECR_NAME = '009543462659.dkr.ecr.ap-northeast-2.amazonaws.com'
+    IAM_USER = 'AWSb-user'
+    Region = 'ap-northeast-2'
+    Aws_access_key_id = 'AKIAQEOGVV4BVWCL4J5B'
+    Aws_secret_access_key = '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'
+    Git_User = 'GBDO'
+    Git_Token = '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'
+    
+  }
+  stages {
+    stage('Checkout Application Git Branch') {
+        steps {
+            git credentialsId: "${CredentialID}",
+                url: "https://github.com/BTC-AWS2-EDU/${IMG_NAME}.git",
+                branch: 'main'
+        }
+        post {
+                failure {
+                  echo 'Repository clone failure !'
+                  slackSend (
+                    channel: '# aws-semi-project',
+                    color: '#ce6054',
+                    message: 'Fail Git Clone for Catalogue'
+                  )
+                }
+                success {
+                  echo 'Repository clone success !'
+                }
+        }
+    }
+    stage('Docker Image Build') {
+        steps {
+             script {
+                 sh "ls"
+                 dockerImage = docker.build("${ECR_NAME}/${IMG_NAME}:${CurrentBuildnumber}")
+                 dockerImage = docker.build("${ECR_NAME}/${IMG_NAME}:latest")
+             }
+        }
+        post {
+                failure {
+                  echo 'Payment Docker image build failure !'
+                  slackSend (
+                    channel: '# aws-semi-project',
+                    color: '#ce6054',
+                    message: 'Fail Docker image Building for Catalogue'
+                  )
+                }
+                success {
+                  echo 'Payment  Docker image build success !'
+                }
+        }
+    }
+    stage('ECR Login') {
+        steps {
+            sh "aws configure set defualt.resion ${Region} && aws configure set aws_access_key_id ${Aws_access_key_id} && aws configure set aws_secret_access_key ${Aws_secret_access_key}"
+            sh "aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${ECR_ID}.dkr.ecr.ap-northeast-2.amazonaws.com"
+            sleep 3 /* Wait login */
+        }
+        post {
+                failure {
+                  echo 'ECR login failure !'
+                  slackSend (
+                    channel: '# aws-semi-project',
+                    color: '#ce6054',
+                    message: 'Fail ECR login for Catalogue'
+                  )
+                }
+                success {
+                  echo 'ECR login success !'
+                }
+        }
+    }
+    stage('Docker Image Push') {
+        steps {
+            script {
+              sh "docker push ${ECR_NAME}/${IMG_NAME}:${CurrentBuildnumber}"
+              sh "docker push ${ECR_NAME}/${IMG_NAME}:latest"
+              sleep 3 /* Wait uploading */
+            }
+        }
+        post {
+                failure {
+                  echo 'Catalogue Docker Image Push failure !'
+                  sh "docker rmi ${ECR_NAME}/${IMG_NAME}:${CurrentBuildnumber}"
+                  sh "docker rmi ${ECR_NAME}/${IMG_NAME}:latest"
+                  slackSend (
+                    channel: '# aws-semi-project',
+                    color: '#ce6054',
+                    message: 'Fail Docker image Pushing for Catalogue'
+                  )
+                }
+                success {
+                  echo 'Catalogue Docker image push success !'
+                  sh "docker rmi ${ECR_NAME}/${IMG_NAME}:${CurrentBuildnumber}"
+                  sh "docker rmi ${ECR_NAME}/${IMG_NAME}:latest"
+                }
+        }
+    }
+    stage('Docker Image Clean') {
+        steps {
+            script {   
+              sh 'docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi'
+            }
+        }
+    }
+    stage('K8S Manifest Update') {
+        steps {
+            git credentialsId: "${CredentialID}",
+                url: 'https://github.com/BTC-AWS2-EDU/menifest.git',
+                branch: 'main'
+            
+            sh 'echo "s#${SockShop_NAME}/${IMG_NAME}:[0-9].[0-9].[0-9]#${ECR_NAME}/${IMG_NAME}:${CurrentBuildnumber}#g" > sedscript  && sed -i -f sedscript payment.yaml'
+            sh 'echo "s#${ECR_NAME}/${IMG_NAME}:[0-9].[0-9][0-9]#${ECR_NAME}/${IMG_NAME}:${CurrentBuildnumber}#g" > sedscript2  && sed -i -f sedscript2 payment.yaml'
+            sh "git add payment.yaml"
+            sh "git commit -m '[UPDATE] ${IMG_NAME} ${CurrentBuildnumber} image versioning'"
+            sshagent(credentials: ["${CredentialID}"]) {
+                sh "git remote set-url origin https://${Git_User}:${Git_Token}@github.com/BTC-AWS2-EDU/menifest.git"
+                sh "git push -u origin main"
+             }
+        }
+        post {
+                failure {
+                  echo 'K8S Manifest Update failure !'
+                  slackSend (
+                    channel: '# aws-semi-project',
+                    color: '#ce6054',
+                    message: 'Fail K8S Manifest Updating for Catalogue'
+                  )
+                }
+                success {
+                  echo 'K8S Manifest Update success !'
+                }
+        }
+    }
+  }
+  
+}

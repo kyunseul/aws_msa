@@ -1,0 +1,37 @@
+#!/bin/bash
+sudo yum -y update
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+sudo yum install -y jq git
+sudo yum -y install mysql
+echo -e "[mongodb-org-4.0] \nname=MongoDB Repository\nbaseurl=https://repo.mongodb.org/yum/amazon/2013.03/mongodb-org/4.0/x86_64/\ngpgcheck=1 \nenabled=1 \ngpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc" | sudo tee /etc/yum.repos.d/mongodb-org-4.0.repo
+sudo yum install -y mongodb-org-shell
+sudo yum install -y maven
+sudo yum install -y java-11-amazon-corretto.x86_64
+
+
+mkdir /home/ec2-user/.aws
+echo -e '[${user}]\naws_access_key_id = ${accesskey}\naws_secret_access_key = ${secretkey}\n' >> /home/ec2-user/.aws/credentials
+chown ec2-user:ec2-user /home/ec2-user/.aws
+chown ec2-user:ec2-user /home/ec2-user/.aws/credentials
+
+sudo yum install -y docker
+sudo systemctl enable --now docker
+sudo usermod -a -G docker ec2-user
+curl -s -L https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker -o /etc/bash_completion.d/docker
+
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+cp /usr/local/bin/eksctl /bin/eksctl
+
+curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.23.7/2022-06-29/bin/linux/amd64/kubectl
+chmod +x kubectl
+mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+cp kubectl /bin/kubectl
+source <(kubectl completion bash)
+echo "source <(kubectl completion bash)" >> /home/ec2-user/.bashrc
+
+su ec2-user bash -c 'aws eks --region ap-northeast-2 update-kubeconfig --name ${cluster-name} --profile ${user}'
+su ec2-user bash -c 'cd ~ && curl -L https://git.io/get_helm.sh | bash -s -- --version v3.8.2 && helm init'

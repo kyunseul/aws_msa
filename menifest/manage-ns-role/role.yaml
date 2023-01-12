@@ -1,0 +1,57 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dev-access-role
+  namespace: develop
+rules:
+- apiGroups: ["*"]
+  resources: ["*"] 
+  verbs: ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dev-access-role-binding
+  namespace: develop
+
+## Role
+roleRef:
+  kind: Role
+  name: dev-access-role
+  apiGroup: rbac.authorization.k8s.io
+
+## Service Account
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: develop
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dep-access-role
+  namespace: deploy
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dep-access-role-binding
+  namespace: deploy
+
+## Role
+roleRef:
+  kind: Role
+  name: dep-access-role
+  apiGroup: rbac.authorization.k8s.io
+
+## Service Account
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: deploy
+---

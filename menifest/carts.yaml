@@ -1,0 +1,108 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carts
+  labels:
+    name: carts
+    tags.datadoghq.com/env: DEP
+    tags.datadoghq.com/service: Cart-Service
+    tags.datadoghq.com/version: "1"
+  namespace: deploy
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: carts
+  template:
+    metadata:
+      labels:
+        name: carts
+        tags.datadoghq.com/env: DEP
+        tags.datadoghq.com/service: Cart-Service
+        tags.datadoghq.com/version: "1"
+        admission.datadoghq.com/enabled: "true"
+      annotations:
+        admission.datadoghq.com/java-lib.version: v1.2.0
+    spec:
+      containers:
+        - name: carts
+          image: 009543462659.dkr.ecr.ap-northeast-2.amazonaws.com/carts:3.19
+          args: ["mkdir","/logs"]
+          volumeMounts:
+            - name: apmsocketpath
+              mountPath: /var/run/datadog
+            - mountPath: /tmp
+              name: tmp-volume
+            - name: efs-pvc
+              mountPath: /logs
+          env:
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: JAVA_OPTS
+              value: -Xms64m -Xmx128m -XX:+UseG1GC -Djava.securty.egd=file:/devi/urandom -Dspring.zipkin.enabled=false
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
+            - name: DD_LOGS_INJECTION
+              value: "true"
+          resources:
+            limits:
+              cpu: 300m
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          ports:
+          - containerPort: 80
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop:
+                - all
+              add:
+                - NET_BIND_SERVICE
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: tmp-volume
+          emptyDir:
+            medium: Memory
+        - hostPath:
+            path: /var/run/datadog/
+          name: apmsocketpath
+        - name: efs-pvc
+          persistentVolumeClaim:
+            claimName: efs-deploy-claim
+      nodeSelector:
+        kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: carts
+  annotations:
+        prometheus.io/scrape: 'true'
+  labels:
+    name: carts
+  namespace: deploy
+  
+spec:
+  ports:
+    # the port that this service should serve on
+  - port: 80
+    targetPort: 80
+  selector:
+    name: carts
