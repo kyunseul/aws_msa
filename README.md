@@ -3,9 +3,9 @@
 
 1. Naming Rule
    - 네트워크
-   ![image](https://user-images.githubusercontent.com/122523493/212466336-fca3c324-6287-4851-9c3e-c43ec6e836b5.png)
+   ![image](https://user-images.githubusercontent.com/122523493/212466499-08d979fc-8277-483b-bd15-f1d099ca5b85.png)
    - 보안 그룹
-   ![image](https://user-images.githubusercontent.com/122523493/212466347-e627b020-7dc7-492b-b3b2-f96547a22eb9.png)
+   ![image](https://user-images.githubusercontent.com/122523493/212466512-78e793a4-d027-426a-bc63-2bc19948503b.png)
 
 
 2. 이와 같은 AWS 서비스를 사용했습니다.
