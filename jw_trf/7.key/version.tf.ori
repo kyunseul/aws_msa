@@ -17,7 +17,7 @@ terraform {
     }
   }
   backend "s3" {
-    bucket         = "awsb-jongwon-s3"                 # S3 버킷 이름
+    bucket         = "awsb-s3"                 # S3 버킷 이름
     key            = "terraform/key/terraform.tfstate" # tfstate 저장 경로
     region         = "ap-northeast-2"
     dynamodb_table = "terraform-tfstate-lock-key" # dynamodb table 이름

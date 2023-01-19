@@ -1,4 +1,4 @@
-사용 전에 꼭 읽고 사용 !!
+!! 사용 전에 꼭 읽고 사용 !!
 
 Order to apply
 1. s3
@@ -29,7 +29,7 @@ bastion에서 mgmt 서버로 접속하는 방법은 각자 선택 ex)scp로 키 
 terraform init -reconfigure
 
 
-Essential command !!!!!!!!!
+!!!!!!!!! Essential command !!!!!!!!!
 ###[1.s3] directory###
 
 

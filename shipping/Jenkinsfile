@@ -14,10 +14,10 @@ pipeline {
     ECR_NAME = '009543462659.dkr.ecr.ap-northeast-2.amazonaws.com'
     IAM_USER = 'AWSb-user'
     Region = 'ap-northeast-2'
-    Aws_access_key_id = 'AKIAQEOGVV4BVWCL4J5B'
-    Aws_secret_access_key = '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'
-    Git_User = 'GBDO'
-    Git_Token = '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'
+    Aws_access_key_id = 'Aws_access_key_id'
+    Aws_secret_access_key = 'Aws_secret_access_key'
+    Git_User = 'Git_User'
+    Git_Token = 'Git_Token'
     
   }
   stages {
